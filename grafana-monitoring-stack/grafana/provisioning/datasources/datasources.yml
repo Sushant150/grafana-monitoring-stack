@@ -1,0 +1,84 @@
+
+apiVersion: 1
+
+datasources:
+  # Prometheus datasource
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      timeInterval: "5s"
+      queryTimeout: "60s"
+      httpMethod: POST
+
+  # Loki datasource for logs
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: true
+    jsonData:
+      maxLines: 1000
+      timeout: 60
+      derivedFields:
+        - datasourceUid: prometheus_uid
+          matcherRegex: "traceID=(\\w+)"
+          name: TraceID
+          url: "$${__value.raw}"
+
+  # AWS CloudWatch datasource
+  - name: CloudWatch
+    type: cloudwatch
+    access: proxy
+    editable: true
+    jsonData:
+      authType: default
+      defaultRegion: us-east-1
+      customMetricsNamespaces: "AWS/EC2,AWS/ELB,AWS/RDS,AWS/Lambda"
+    secureJsonData:
+      accessKey: "${AWS_ACCESS_KEY_ID}"
+      secretKey: "${AWS_SECRET_ACCESS_KEY}"
+
+  # TestData datasource for testing
+  - name: TestData
+    type: testdata
+    access: proxy
+    editable: true
+
+  # Custom JSON API datasource
+  - name: Custom API
+    type: grafana-simple-json-datasource
+    access: proxy
+    url: http://localhost:8080/api
+    editable: true
+    basicAuth: false
+    isDefault: false
+
+  # MySQL datasource (if needed)
+  - name: MySQL
+    type: mysql
+    access: proxy
+    url: mysql-server:3306
+    database: grafana_metrics
+    user: grafana_user
+    editable: true
+    secureJsonData:
+      password: "${MYSQL_PASSWORD}"
+
+  # PostgreSQL datasource (if needed)
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: postgres-server:5432
+    database: metrics_db
+    user: postgres
+    editable: true
+    secureJsonData:
+      password: "${POSTGRES_PASSWORD}"
+    jsonData:
+      sslmode: require
+      postgresVersion: 1200
+      timescaledb: false
